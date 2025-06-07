@@ -19,3 +19,22 @@ module.exports.createRide = async(req,res) => {
     }
 }
 
+module.exports.getFare = async(req,res) =>  {
+    const errors = validationResult(req);
+    console.log("1111", req.query);
+    
+    if(!errors.isEmpty()){
+        return res.status(400).json({errors: errors.array() });
+    }
+
+    const {pickup, destination} = req.query;
+
+    try {
+        const fare = await rideService.getFare(pickup, destination);
+        return res.status(200).json(fare);
+    } catch (error) {
+        console.error("Error in getFare:", error.message);
+        return res.status(500).json({message : error.message});
+        
+    }
+}

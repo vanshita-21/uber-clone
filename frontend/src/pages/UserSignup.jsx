@@ -23,8 +23,11 @@ const UserSignup = () => {
       email,
       password
     }
+console.log("newUser",newUser);
 
     const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, newUser);
+    console.log("response",response);
+    
     if(response.status  == 201){
       localStorage.setItem('token', response?.data?.token);
       setUser(response?.data?.user);

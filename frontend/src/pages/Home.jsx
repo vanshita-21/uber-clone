@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useContext, useEffect } from 'react';
 import {useGSAP} from '@gsap/react';
 import gsap from 'gsap';
 import 'remixicon/fonts/remixicon.css'
@@ -8,6 +8,10 @@ import ConfirmRide from '../components/ConfirmRide';
 import LookingForDriver from '../components/LookingForDriver';
 import WaitingForDriver from '../components/WaitingForDriver';
 import axios from 'axios';
+import { SocketContext } from '../context/SocketContext';
+import { UserDataContext } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
+import LiveTracking from '../components/LiveTracking';
 
 const Home = () => {
   const [pickup, setPickup] = useState('');
@@ -28,7 +32,25 @@ const Home = () => {
   const [activeField, setActiveField] = useState(null);
   const [fare, setFare] = useState({});
   const [vehicleType, setVehicleType] = useState(null);
+  const { socket } = useContext(SocketContext);
+  const { user } = useContext(UserDataContext);
+  const [ride, setRide] =  useState(null);
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    socket.emit("join", {userType : "user", userId: user._id})
+  },[ user ])
+
+  socket.on('ride-confirmed', ride => {
+    setVehicleFound(false);
+    setWaitingForDriver(true);
+    setRide(ride);
+  })
+
+  socket.on('ride-started', ride => {
+    setWaitingForDriver(false);
+    navigate('/riding', {state: {ride}});
+  })
   const handlePickupChange = async (e) => {
     setPickup(e.target.value)
     try {
@@ -165,8 +187,7 @@ const Home = () => {
       <img className='w-16 absolute left-5 top-5' src='/src/assets/images/uber_logo1.png' placeholder='image'/>
 
       <div className='h-screen w-screen'>
-        {/* image for temporary use */}
-        <img className='h-full w-full object-cover' src='/src/assets/images/uber_map.gif' alt='' />
+        <LiveTracking />
       </div>
 
       <div className='flex flex-col justify-end h-screen absolute top-0 w-full'>
@@ -226,7 +247,11 @@ const Home = () => {
         <LookingForDriver pickup={pickup} destination={destination} fare={fare} vehicleType={vehicleType} setVehicleFound={setVehicleFound}/>
       </div>
       <div ref={waitingForDriverRef} className="fixed w-full z-10 bottom-0 translate-y-full bg-white px-3 py-6 pt-12">
-        <WaitingForDriver setWaitingForDriver={setWaitingForDriver}/>
+        <WaitingForDriver
+        ride={ride}
+        setVehicleFound={setVehicleFound}
+        setWaitingForDriver={setWaitingForDriver}
+         waitingForDriver={waitingForDriver}/>
       </div>
     </div>
   )
